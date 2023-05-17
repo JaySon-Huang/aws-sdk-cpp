@@ -13,6 +13,7 @@
 #include <aws/core/client/RetryStrategy.h>
 #include <aws/core/http/HttpClient.h>
 #include <aws/core/http/HttpResponse.h>
+#include <aws/core/http/HttpTypes.h>
 #include <aws/core/http/URI.h>
 #include <aws/core/utils/Outcome.h>
 #include <aws/core/utils/xml/XmlSerializer.h>
@@ -175,6 +176,15 @@ AWSError<CoreErrors> AWSXMLClient::BuildAWSError(const std::shared_ptr<Http::Htt
     error.SetResponseHeaders(httpResponse->GetHeaders());
     error.SetResponseCode(httpResponse->GetResponseCode());
     error.SetRemoteHostIpAddress(httpResponse->GetOriginatingRequest().GetResolvedRemoteHost());
-    AWS_LOGSTREAM_ERROR(AWS_XML_CLIENT_LOG_TAG, error);
+
+    if (httpResponse->GetOriginatingRequest().GetMethod() == HttpMethod::HTTP_HEAD && httpResponse->GetResponseCode() == HttpResponseCode::NOT_FOUND)
+    {
+        // ignore error logging for HEAD request with 404 response code, ususally it is caused by determining whether the object exists or not.
+        AWS_LOGSTREAM_DEBUG(AWS_XML_CLIENT_LOG_TAG, error);
+    }
+    else
+    {
+        AWS_LOGSTREAM_ERROR(AWS_XML_CLIENT_LOG_TAG, error);
+    }
     return error;
 }
