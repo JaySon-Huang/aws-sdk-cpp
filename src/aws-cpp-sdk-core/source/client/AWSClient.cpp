@@ -201,7 +201,6 @@ bool AWSClient::AdjustClockSkew(HttpResponseOutcome& outcome, const char* signer
     {
         auto signer = GetSignerByName(signerName);
         //detect clock skew and try to correct.
-        AWS_LOGSTREAM_WARN(AWS_CLIENT_LOG_TAG, "If the signature check failed. This could be because of a time skew. Attempting to adjust the signer.");
 
         DateTime serverTime = GetServerTimeFromError(outcome.GetError());
         const auto signingTimestamp = signer->GetSigningTimestamp();
@@ -216,6 +215,7 @@ bool AWSClient::AdjustClockSkew(HttpResponseOutcome& outcome, const char* signer
         //only try again if clock skew was the cause of the error.
         if (diff >= TIME_DIFF_MAX || diff <= TIME_DIFF_MIN)
         {
+            AWS_LOGSTREAM_WARN(AWS_CLIENT_LOG_TAG, "If the signature check failed. This could be because of a time skew. Attempting to adjust the signer.");
             diff = DateTime::Diff(serverTime, DateTime::Now());
             AWS_LOGSTREAM_INFO(AWS_CLIENT_LOG_TAG, "Computed time difference as " << diff.count() << " milliseconds. Adjusting signer with the skew.");
             signer->SetClockSkew(diff);
